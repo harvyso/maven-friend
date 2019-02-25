@@ -1,0 +1,410 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.test</groupId>
+  <artifactId>first</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+    
+  <properties>
+  	<jdbc.url><![CDATA[jdbc:oracle:thin:@localhost:1521:XE]]></jdbc.url>
+  </properties>
+  
+  <dependencyManagement>
+  </dependencyManagement>
+  
+  <dependencies>
+  </dependencies>
+  
+  <repositories>
+
+        <repository>
+           <id>snmp4j-repo</id>
+           <url>https://oosnmp.net/dist/release</url>
+        </repository>
+
+  </repositories>
+  
+  <build>
+
+  	<pluginManagement>
+  	</pluginManagement>
+  	
+  	<plugins>
+
+  		<plugin>
+              <inherited>true</inherited>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <!-- each version of maven using some predefined plugin version -->
+              <!-- why compiler plugin should be specified -->
+              <version>3.8.0</version>
+              <configuration>
+                  <source>1.8</source>
+                  <target>1.8</target>
+                  <optimize>true</optimize>
+                  <debug>true</debug>
+                  <encoding>UTF-8</encoding>
+              </configuration>
+        </plugin>
+        
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+			<version>1.5.0</version>
+            <executions>
+                <execution>
+                    <inherited>false</inherited>
+                    <id>changesetHash</id>
+                    <phase>generate-resources</phase>
+                    <goals>
+                        <goal>exec</goal>
+                    </goals>
+
+                    <configuration>
+                        <executable>git</executable>
+                        <commandlineArgs>rev-parse HEAD</commandlineArgs>
+                        <!-- <outputFile>${project.build.directory}/generated-res/summary.txt</outputFile>  -->
+                        <outputFile>${project.basedir}/src/main/resources/summary.txt</outputFile>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>3.0.2</version>
+            <configuration>
+                <encoding>ISO-8859-1</encoding>
+                <escapeString>\</escapeString>
+                <!-- this is to overwrite default bundles with bundles from branding -->
+                <overwrite>true</overwrite>
+            </configuration>
+        </plugin>
+
+            <!-- FIX! DO NOT CHANGE SOURCES -->
+            <!--             <plugin> -->
+            <!--                 <groupId>org.apache.maven.plugins</groupId> -->
+            <!--                 <artifactId>maven-clean-plugin</artifactId> -->
+            <!--                 <version>2.4.1</version> -->
+            <!--                 <configuration> -->
+            <!--                     <verbose>true</verbose> -->
+            <!--                     <filesets> -->
+            <!--                         <fileset> -->
+            <!--                             <directory>${version.scm.folder}</directory> -->
+            <!--                             <includes> -->
+            <!--                                 <include>**/hg*.txt</include> -->
+            <!--                             </includes> -->
+            <!--                         </fileset> -->
+            <!--                         <fileset> -->
+            <!--                             <directory>${webapp.target}</directory> -->
+            <!--                         </fileset> -->
+            <!--                     </filesets> -->
+            <!--                 </configuration> -->
+            <!--             </plugin> -->
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <warName>prevision</warName>
+
+                    <webResources>
+
+                        <!-- move filtered web.xml to war -->
+                        <!-- see resource section where web.xml filtered -->
+                        <resource>
+                            <filtering>false</filtering>
+                            <directory>target/WEB-INF/</directory>
+                            <includes>
+                                <include>web.xml</include>
+                            </includes>
+                            <targetPath>WEB-INF</targetPath>
+                        </resource>
+
+                        <resource>
+                            <filtering>false</filtering>
+                            <directory>src/main/installation/${installation.type}</directory>
+                        </resource>
+
+                        <!--                         <resource> -->
+                        <!--                             <filtering>false</filtering> -->
+                        <!--                             <directory>src/main/resources/branding/${branding.name}</directory> -->
+                        <!--                             <targetPath>branding/${branding.name}</targetPath> -->
+                        <!--                         </resource> -->
+
+                        <!-- move generated pdf files to webapp -->
+                        <resource>
+                            <filtering>false</filtering>
+                            <directory>target/documentation/online/operator/objekter</directory>
+                            <includes>
+                                <include>*.pdf</include>
+                            </includes>
+                            <targetPath>docs/operator/Objektdokumentasjon</targetPath>
+                        </resource>
+
+                    </webResources>
+
+                    <warSourceExcludes>development/**</warSourceExcludes>
+
+                    <!-- <webappDirectory>target/${targetProductName}</webappDirectory> -->
+
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-plugin</artifactId>
+                <version>1.9.0.0</version>
+                <configuration>
+                    <!--it can NOT be used because now we have TWO dataBases : one Oracle (old prevision DB) and a new one: HSQLDB for phones-->
+                    <!--<changeLogFile>prevision/dbchangelog/changelog.xml</changeLogFile>-->
+                    <!--<driver>oracle.jdbc.OracleDriver</driver>-->
+                    <!--<url>${jdbc.url}</url>-->
+                    <!--<username>${jdbc.username}</username>-->
+                    <!--<password>${jdbc.password}</password>-->
+                    <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.0</version>
+                <executions>
+                    <execution>
+                        <id>enforce-property</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>2.1.1</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>1.7</version>
+                                </requireJavaVersion>
+                                <requireProperty>
+                                    <property>jdbc.url</property>
+                                    <message>You must specify a jdbc url to PREVISION DB!</message>
+                                    <regex>
+                                        <![CDATA[jdbc:*:*:[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]]]></regex>
+                                    <regexMessage>JDBC URL has invalid format or regexp incorrect!</regexMessage>
+                                </requireProperty>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        
+        <plugin>
+           <artifactId>maven-surefire-plugin</artifactId>
+           <version>2.22.1</version>
+           <configuration>
+               <argLine>-Doracle.jdbc.timezoneAsRegion=false</argLine>
+               <groups>prevision.test.category.FastTest</groups>
+           </configuration>
+       </plugin>
+
+       <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-failsafe-plugin</artifactId>
+           <version>2.22.1</version>
+           <configuration>
+               <skipTests>${skipIntegrationTests}</skipTests>
+               <excludedGroups>prevision.test.category.FastTest</excludedGroups>
+           </configuration>
+           <executions>
+               <execution>
+                   <goals>
+                       <goal>integration-test</goal>
+                   </goals>
+               </execution>
+           </executions>
+       </plugin>
+   
+            
+  	</plugins>
+  	
+    <resources>
+
+          <!-- see https://tomcat.apache.org/tomcat-7.0-doc/logging.html -->
+          <!-- move configuration files and configuration files for log4j -->
+          <resource>
+              <filtering>true</filtering>
+              <directory>src/main/res</directory>
+          </resource>
+  	
+  	</resources>
+  	
+  	<testResources>
+         <testResource>
+             <filtering>false</filtering>
+             <directory>src/test/java</directory>
+             <includes>
+                 <include>**</include>
+             </includes>
+             <excludes>
+                 <exclude>**/*.java</exclude>
+             </excludes>
+         </testResource>
+     </testResources>
+  	
+  	<filters>
+  	</filters>
+  	
+  	<extensions>
+  	</extensions>
+  	
+  </build>
+  
+  <profiles>
+  
+  	<!-- use java x64 bit to download nodejs x64 bit, looks like x32bit is absent-->
+  	<profile>
+            <id>build-frontend</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>1.6</version>
+                        <configuration>
+                            <nodeVersion>v10.13.0</nodeVersion>
+                            <workingDirectory>src/main/reactjs</workingDirectory>
+                            <installDirectory>../node-bin</installDirectory>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>install node and npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>npm install</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>install</arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>npm run build</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <phase>prepare-package</phase>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>tomcat</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.tomcat.maven</groupId>
+                        <artifactId>tomcat7-maven-plugin</artifactId>
+
+                        <configuration>
+                            <uriEncoding>UTF-8</uriEncoding>
+
+                            <!--                            default value for port is 8080
+                                it is commented because then it can be re-defined via "maven.tomcat.port" property
+                            <port>8080</port> -->
+
+                            <systemProperties>
+                                <geoserver.url>${geoserver.url}</geoserver.url>
+                            </systemProperties>
+
+                        </configuration>
+
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencyManagement>
+                <dependencies>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+        <profile>
+            <id>tomcat-https</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.tomcat.maven</groupId>
+                        <artifactId>tomcat7-maven-plugin</artifactId>
+
+                        <configuration>
+                            <uriEncoding>UTF-8</uriEncoding>
+
+                            <!--    default value for https=port is 0 ; key to re-define: "maven.tomcat.httpsPort"  -->
+                            <httpsPort>8083</httpsPort>
+
+                            <port>8080</port>
+
+                            <systemProperties>
+                                <geoserver.url>${geoserver.url}</geoserver.url>
+                            </systemProperties>
+                            <keystoreFile>${project.basedir}/src/test/resources/tomcat_keystore</keystoreFile>
+                            <keystorePass>aaaaaa</keystorePass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>tomcat9</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.tomcat.maven</groupId>
+                        <artifactId>tomcat7-maven-plugin</artifactId>
+
+                        <configuration>
+                            <uriEncoding>UTF-8</uriEncoding>
+                            <systemProperties>
+                                <geoserver.url>${geoserver.url}</geoserver.url>
+                            </systemProperties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <properties>
+                <tomcat.version>9.0.13</tomcat.version>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.tomcat.embed</groupId>
+                        <artifactId>tomcat-embed-core</artifactId>
+                        <version>${tomcat.version}</version>
+                        <scope>provided</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.tomcat</groupId>
+                        <artifactId>tomcat-jdbc</artifactId>
+                        <version>${tomcat.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+        </profile>
+
+  </profiles>
+  
+</project>
