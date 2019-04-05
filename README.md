@@ -8,5 +8,5 @@ mvn archetype:generate -DgroupId={project-packaging}
    -DarchetypeArtifactId=maven-archetype-quickstart
    
    
-# to check code with default style then see target/site/checkstyle.html
+to check code with default style then see target/site/checkstyle.html
 mvn -Dhttps.protocols=TLSv1.2 checkstyle:checkstyle
